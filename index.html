@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ruleta de suspenso 2000–2009</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1ece0;--ink:#13202f;--muted:#5b6571;--card:#fffaf0;--line:#13202f33;--amber:#c98400;--red:#a3202b;--teal:#1f6f78;--navy:#13202f;--paper:#f1ece0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1623;--ink:#ece6d8;--muted:#9aa5b1;--card:#142234;--line:#ece6d833;--amber:#f2a900;--red:#d1424d;--teal:#3a9aa5;--navy:#0d1623;--paper:#ece6d8}}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Newsreader',Georgia,serif;font-size:18px;line-height:1.55;min-height:100vh}
+main{max-width:1000px;margin:0 auto;padding:28px 20px 48px;display:grid;gap:28px;grid-template-columns:1fr}
+h1{font-family:'Anton','Impact',sans-serif;font-weight:400;font-size:clamp(2.4rem,9vw,4.6rem);line-height:.95;margin:0;letter-spacing:.01em}
+.sub{margin:10px 0 0;color:var(--muted);max-width:44ch}
+.stage{display:flex;flex-direction:column;align-items:center;gap:20px}
+.wheelbox{position:relative;width:min(92vw,500px);aspect-ratio:1}
+canvas{width:100%;height:100%;display:block;border-radius:50%;box-shadow:0 0 0 6px var(--amber),0 0 0 9px var(--navy)}
+.pointer{position:absolute;left:50%;top:-14px;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:34px solid var(--red);filter:drop-shadow(0 2px 0 var(--navy));z-index:2}
+.hub{position:absolute;inset:50%;width:21%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:4px solid var(--amber);background:var(--navy);color:var(--paper);font-family:'Anton',sans-serif;font-size:clamp(.9rem,3.4vw,1.25rem);letter-spacing:.04em;cursor:pointer;z-index:3}
+.hub:disabled{cursor:progress;opacity:.85}
+button:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+.card{background:var(--card);border:1px solid var(--line);border-left:8px solid var(--red);padding:24px;min-height:300px}
+.card h2{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(1.8rem,6vw,2.6rem);line-height:1;margin:0 0 6px}
+.meta{color:var(--muted);font-style:italic;margin:0 0 14px}
+.card p{margin:0 0 16px;max-width:60ch}
+.twist{display:none;border-top:2px dashed var(--red);padding-top:14px}
+.twist.on{display:block}
+.twist b{color:var(--red)}
+.reveal{font:inherit;font-weight:600;background:transparent;color:var(--ink);border:2px solid var(--ink);padding:9px 16px;cursor:pointer}
+.reveal:hover{background:var(--ink);color:var(--bg)}
+.live{font-family:'Anton',sans-serif;font-size:1.3rem;margin:0;min-height:1.6em;text-align:center;color:var(--red)}
+.empty{color:var(--muted)}
+.warn{font-size:.9rem;color:var(--muted);margin-top:14px}
+@media(min-width:900px){main{grid-template-columns:1.05fr 1fr;align-items:center}header{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>Ruleta de suspenso<br>2000–2009</h1>
+<p class="sub">Cincuenta películas de suspenso con finales que cambian todo lo que viste. Gira, mira la ficha y decide si querés leer el giro.</p>
+</header>
+
+<section class="stage">
+<div class="wheelbox">
+<div class="pointer"></div>
+<canvas id="w" width="1000" height="1000" aria-label="Ruleta con cincuenta películas"></canvas>
+<button class="hub" id="spin">GIRAR</button>
+</div>
+<p class="live" id="live" aria-hidden="true">&nbsp;</p>
+</section>
+
+<section class="card" id="card" aria-live="polite">
+<p class="empty">Todavía no giraste. Tocá GIRAR en el centro de la ruleta y te toca una película.</p>
+</section>
+</main>
+
+<script>
+const RAW=[
+["Memento",2000,"Christopher Nolan","Un hombre sin memoria reciente busca al asesino de su esposa.","Leonard ya se vengó; se miente a sí mismo y elige a Teddy como su próximo blanco."],
+["Nueve reinas",2000,"Fabián Bielinsky","Dos estafadores callejeros intentan vender un sello falsificado.","Juan y Valeria, hermana de Marcos, lo habían planeado todo: la víctima era Marcos."],
+["El protegido",2000,"M. Night Shyamalan","Un hombre sale ileso del peor accidente de tren en décadas.","Elijah Price provocó los desastres para encontrar a su opuesto."],
+["Lo que la verdad esconde",2000,"Robert Zemeckis","Una mujer cree que su casa está embrujada.","Su marido Norman asesinó a Madison."],
+["Los otros",2001,"Alejandro Amenábar","Una madre y sus hijos fotosensibles viven en una mansión con presencias.","Ellos son los fantasmas; los “intrusos” son la familia viva."],
+["Mulholland Drive",2001,"David Lynch","Una aspirante a actriz ayuda a una mujer con amnesia en Los Ángeles.","Gran parte es el sueño de Diane, que mandó matar a Camila (lectura más aceptada)."],
+["Vanilla Sky",2001,"Cameron Crowe","Un millonario desfigurado no distingue el sueño de la realidad.","David vive un sueño inducido tras su suicidio, mientras está criogenizado."],
+["Una mente brillante",2001,"Ron Howard","Un matemático genial es reclutado por un agente secreto.","Su compañero, la niña y el agente Parcher son alucinaciones de su esquizofrenia."],
+["Ocean’s Eleven",2001,"Steven Soderbergh","Once ladrones planean robar tres casinos de Las Vegas.","El “SWAT” dentro de la bóveda era su propia gente sacando el dinero."],
+["Minority Report",2002,"Steven Spielberg","Un policía del “precrimen” es acusado de un asesinato que aún no cometió.","Su jefe Burgess lo incriminó; el futuro no estaba escrito."],
+["Spider",2002,"David Cronenberg","Un hombre perturbado regresa al barrio de su infancia tras años internado.","Spider mató a su madre al confundirla con la amante de su padre."],
+["Femme Fatale",2002,"Brian De Palma","Una ladrona traiciona a su banda en el festival de Cannes.","Casi todo es un sueño de Laure, que despierta para evitar el desastre."],
+["Irreversible",2002,"Gaspar Noé","Una noche de venganza contada en orden inverso.","El vengador mata al hombre equivocado."],
+["Identidad",2003,"James Mangold","Diez desconocidos quedan varados en un motel bajo la lluvia.","Son personalidades de un asesino; la última, la del niño, es la verdadera culpable."],
+["Oldboy",2003,"Park Chan-wook","Un hombre es encerrado 15 años sin saber por qué.","Mi-do es su hija; Woo-jin lo planeó todo para vengarse."],
+["Río místico",2003,"Clint Eastwood","Tres amigos marcados por un trauma se reencuentran tras un asesinato.","Jimmy mata a Dave creyéndolo culpable, pero los asesinos eran otros."],
+["Alta tensión",2003,"Alexandre Aja","Dos amigas son atacadas por un asesino en una casa de campo.","Marie es la asesina; el perseguidor nunca fue otro."],
+["Matchstick Men",2003,"Ridley Scott","Un estafador obsesivo conoce a la hija adolescente que no sabía que tenía.","Angela es cómplice de su exsocio; la víctima del timo era Roy."],
+["Swimming Pool",2003,"François Ozon","Una escritora de policiales viaja a la casa de su editor en Francia.","Julie y los hechos nacen de su imaginación; la hija real del editor es otra."],
+["Dos hermanas",2003,"Kim Jee-woon","Una joven vuelve a casa tras su internación y choca con su madrastra.","Su hermana Su-yeon murió y Su-mi revive los hechos mezclando roles."],
+["El maquinista",2004,"Brad Anderson","Un obrero sin dormir hace un año ve señales de que alguien lo persigue.","Ivan no existe; Trevor atropelló a un niño y huyó."],
+["Saw",2004,"James Wan","Dos hombres despiertan encadenados en un baño con un cadáver en el medio.","El “cadáver” es Jigsaw, que estuvo ahí todo el tiempo."],
+["Ventana secreta",2004,"David Koepp","Un escritor es acosado por alguien que lo acusa de plagio.","Shooter no existe: es otra faceta de Mort."],
+["La mala educación",2004,"Pedro Almodóvar","Un director recibe a un actor que dice ser un viejo amor de infancia.","El visitante es Juan, hermano de Ignacio, que tomó su identidad tras su muerte."],
+["La aldea",2004,"M. Night Shyamalan","Una aldea aislada teme a criaturas que habitan el bosque.","Es la actualidad: los ancianos la crearon como refugio y las criaturas son disfraces."],
+["El efecto mariposa",2004,"Eric Bress, J. Mackye Gruber","Un joven puede volver a recuerdos borrados para cambiar su pasado.","Cada cambio empeora otro presente; al final se aleja de Kayleigh para salvarla."],
+["Shutter",2004,"Banjong Pisanthanakun, Parkpoom Wongpoom","Un fotógrafo ve manchas extrañas en sus fotos tras un atropello.","Natre, la fantasma, siempre estuvo sobre la espalda de Tun."],
+["Escondidas",2005,"John Polson","Una niña viuda cuenta tener un amigo imaginario llamado Charlie.","Charlie es su padre David, que tiene doble personalidad."],
+["Caché",2005,"Michael Haneke","Una familia recibe cintas de video que la espían.","Quién envía las cintas nunca se aclara; el último plano sugiere un vínculo entre sus hijos."],
+["Stay",2005,"Marc Forster","Un psiquiatra intenta evitar el suicidio de un joven paciente.","Todo ocurre en los segundos posteriores a un accidente de auto."],
+["Match Point",2005,"Woody Allen","Un profesor de tenis asciende socialmente y se enreda con su amante.","Mata a Nola y a una vecina; una casualidad con un anillo lo libra."],
+["Revolver",2005,"Guy Ritchie","Un apostador sale de prisión y busca vengarse de un capo.","Mr. Gold es su propio ego: el enemigo está dentro de él."],
+["El descenso",2005,"Neil Marshall","Seis amigas exploran una cueva y hallan criaturas.","Juno traicionó a Sarah y la abandonó; la visión final de su hija es alucinación."],
+["La llave maestra",2005,"Iain Softley","Una enfermera cuida a un anciano en una mansión de Luisiana.","Dos ancianos cambian de cuerpo con otros; Caroline queda atrapada en el cuerpo de la anciana."],
+["El ilusionista",2006,"Neil Burger","Un mago enfrenta al príncipe heredero en la Viena imperial.","Eisenheim y Sophie fingieron la muerte de ella para humillar al príncipe."],
+["El prestigio",2006,"Christopher Nolan","Dos magos rivales se obsesionan con superar el truco del otro.","Borden eran gemelos; Angier se duplicaba con una máquina y ahogaba a su copia."],
+["Lucky Number Slevin",2006,"Paul McGuigan","Un hombre confundido con otro queda entre dos mafiosos en guerra.","Slevin es el hijo de un asesinado y Goodkat orquestó la venganza."],
+["Plan oculto",2006,"Spike Lee","Un asaltante toma un banco de Manhattan y exige cosas absurdas.","Se escondió dentro del banco y salió con los rehenes; el botín eran unos documentos."],
+["Los infiltrados",2006,"Martin Scorsese","Un policía infiltrado en la mafia y un mafioso infiltrado en la policía.","Costello era informante del FBI."],
+["Ellos",2006,"David Moreau, Xavier Palud","Una pareja es atacada de noche en su casa cerca de Bucarest.","Los atacantes son niños."],
+["No se lo digas a nadie",2006,"Guillaume Canet","Un médico recibe un mensaje que parece venir de su esposa asesinada.","Margot está viva: fingió su muerte."],
+["Una mirada en la oscuridad",2006,"Richard Linklater","Un agente encubierto vigila a sus propios amigos adictos.","Bob Arctor se vigila a sí mismo."],
+["Los cronocrímenes",2007,"Nacho Vigalondo","Un hombre viaja una hora al pasado y se cruza consigo mismo.","Héctor es todos los “él” y el bucle lo arma él mismo."],
+["La niebla",2007,"Frank Darabont","Una niebla cubre un pueblo y esconde criaturas.","David mata a todos y el ejército llega minutos después."],
+["Expiación",2007,"Joe Wright","Una niña acusa en falso a un joven y su hermana lo defiende.","Briony inventó el final feliz; Robbie y Cecilia murieron."],
+["Gone Baby Gone",2007,"Ben Affleck","Dos detectives buscan en un barrio humilde a una niña desaparecida.","El capitán Doyle y su gente la secuestraron para “salvarla” de una madre negligente."],
+["El orfanato",2007,"Juan Antonio Bayona","Una mujer reabre el orfanato de su infancia y su hijo habla con amigos invisibles.","Simón murió en el sótano tras un accidente; Laura se queda con los niños fantasma."],
+["Eden Lake",2008,"James Watkins","Una pareja en un lago es atacada por adolescentes.","La ayuda que Jenny encuentra es el padre de uno de los agresores."],
+["Siete almas",2008,"Gabriele Muccino","Un hombre misterioso cambia la vida de siete desconocidos.","Ben se quita la vida para donarles sus órganos."],
+["La huérfana",2009,"Jaume Collet-Serra","Una pareja adopta a una niña de conducta perturbadora.","Esther es una mujer adulta con un trastorno hormonal."],
+["El secreto de sus ojos",2009,"Juan José Campanella","Un exfuncionario judicial reabre un caso de asesinato que lo obsesiona.","Morales tuvo al asesino encerrado en su casa durante 25 años."]
+];
+const MOVIES=RAW.map(a=>({t:a[0],y:a[1],d:a[2],h:a[3],x:a[4]}));
+const cols=['#13202f','#a3202b','#1f6f78','#f2a900'];
+const cv=document.getElementById('w'),cx=cv.getContext('2d'),N=MOVIES.length,S=2*Math.PI/N;
+let rot=0,busy=false,shown=-1;const live=document.getElementById('live');
+function draw(){
+ const R=500;cx.clearRect(0,0,1000,1000);cx.save();cx.translate(R,R);cx.rotate(rot);
+ for(let i=0;i<N;i++){
+  cx.beginPath();cx.moveTo(0,0);cx.arc(0,0,R,i*S,(i+1)*S);cx.closePath();
+  cx.fillStyle=cols[i%4];cx.fill();cx.strokeStyle='#f1ece0';cx.lineWidth=1.5;cx.stroke();
+ }
+ cx.restore();
+}
+function show(i){
+ const m=MOVIES[i],c=document.getElementById('card');
+ c.innerHTML='<h2></h2><p class="meta"></p><p class="hook"></p><button class="reveal" id="rv">Revelar el giro</button><div class="twist" id="tw"><p><b>Giro:</b> <span class="tx"></span></p></div><p class="warn">El giro tiene spoilers. Vela solo si ya la viste o no te importa.</p>';
+ c.querySelector('h2').textContent=m.t;
+ c.querySelector('.meta').textContent=m.y+' · '+m.d;
+ c.querySelector('.hook').textContent=m.h;
+ c.querySelector('.tx').textContent=m.x;
+ const b=c.querySelector('#rv'),t=c.querySelector('#tw');
+ b.onclick=()=>{const on=t.classList.toggle('on');b.textContent=on?'Ocultar el giro':'Revelar el giro'};
+}
+function spin(){
+ if(busy)return;busy=true;
+ const btn=document.getElementById('spin');btn.disabled=true;
+ let k;do{k=Math.floor(Math.random()*N)}while(k===shown&&N>1);
+ let end=-Math.PI/2-(k+.5+(Math.random()-.5)*.6)*S;
+ end+=2*Math.PI*Math.ceil((rot+12*Math.PI-end)/(2*Math.PI));
+ const start=rot,dur=matchMedia('(prefers-reduced-motion:reduce)').matches?700:5200,t0=performance.now();
+ (function f(now){
+  const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,4);
+  rot=start+(end-start)*e;draw();live.textContent=MOVIES[Math.floor((((-Math.PI/2-rot)%(2*Math.PI))+2*Math.PI)%(2*Math.PI)/S)].t;
+  if(p<1)requestAnimationFrame(f);
+  else{shown=k;show(k);busy=false;btn.disabled=false;btn.textContent='OTRA VEZ'}
+ })(t0);
+}
+document.getElementById('spin').addEventListener('click',spin);
+draw();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
+</script>
+</body>
+</html>
